@@ -1,4 +1,4 @@
-# LicenNode
+# LICENSEIT
 
 This project stores training data on Shelby with a license attached to every file, captures a cryptographic receipt each time a file is served, logs that receipt on Aptos, and generates an audit report for any training run. The point is to be able to prove, after the fact, that every file a model trained on was lawfully acquired and covered by a valid license at the moment it was read.
 
@@ -10,9 +10,9 @@ Everything here runs against live Shelbynet. There is no demo mode, no mock stor
 
 There are three operations, and they happen in this order.
 
-1. **Upload.** You give LicenNode a file and a license. It validates the license first, uploads the bytes to Shelby, and records the blob's merkle root next to the license in a local manifest.
-2. **Read.** Training code asks LicenNode for a blob, declaring who is reading and for which run. LicenNode checks the license *before* downloading, verifies the served bytes against the root from upload, writes a receipt to Aptos, and only then hands back the content.
-3. **Audit.** You ask for a report on a training run. LicenNode reads the receipts back off chain, judges each one against the license as it stood at that read's timestamp, and writes a Markdown report an auditor can verify line by line.
+1. **Upload.** You give LICENSEIT a file and a license. It validates the license first, uploads the bytes to Shelby, and records the blob's merkle root next to the license in a local manifest.
+2. **Read.** Training code asks LICENSEIT for a blob, declaring who is reading and for which run. LICENSEIT checks the license *before* downloading, verifies the served bytes against the root from upload, writes a receipt to Aptos, and only then hands back the content.
+3. **Audit.** You ask for a report on a training run. LICENSEIT reads the receipts back off chain, judges each one against the license as it stood at that read's timestamp, and writes a Markdown report an auditor can verify line by line.
 
 The rest of this README walks through each step as you would actually run it.
 
@@ -105,11 +105,11 @@ shelby account balance
 git status --ignored
 ```
 
-Types clean, tests green, balances nonzero, and `.env` listed under ignored rather than tracked files. You are ready to use LicenNode.
+Types clean, tests green, balances nonzero, and `.env` listed under ignored rather than tracked files. You are ready to use LICENSEIT.
 
 ---
 
-## Part 2: Using LicenNode from the command line
+## Part 2: Using LICENSEIT from the command line
 
 ### Uploading a licensed file
 
@@ -133,7 +133,7 @@ Upload one file:
 npm run upload:file -- \
   --file samples/example-dataset.txt \
   --license samples/example.license.json \
-  --blob-name licennode/example-dataset.txt \
+  --blob-name LICENSEIT/example-dataset.txt \
   --days 7
 ```
 
@@ -142,7 +142,7 @@ You will see the blob name, its merkle root, the license summary, and when the b
 Upload a whole directory, with a JSON object mapping each file name to its license:
 
 ```
-npm run upload:dataset -- --dir samples --licenses samples/licenses.json --prefix licennode/ --days 7
+npm run upload:dataset -- --dir samples --licenses samples/licenses.json --prefix LICENSEIT/ --days 7
 ```
 
 `--days` is how long Shelby stores the blob, which is a separate question from how long the license permits use. A dataset upload validates *every* license before the first network call and aborts the whole batch if any file is unlicensed, expired, or missing. A half-uploaded dataset is worse than none, because a training run against it looks complete while quietly missing assets.
@@ -159,7 +159,7 @@ Every successful upload appends to `data/manifest.json`:
 
 ```json
 {
-  "blobName": "licennode/example-dataset.txt",
+  "blobName": "LICENSEIT/example-dataset.txt",
   "merkleRoot": "0x329a2fec6d645d1a85e9a47a5f2e8e94fb3fc7bfec207f2aa868ddb7e4580947",
   "license": { "licenseId": "LIC-EXAMPLE-001", "permittedUse": "training", "...": "..." },
   "uploadedAt": "2026-08-16T19:56:59.157Z",
@@ -178,7 +178,7 @@ The `merkleRoot` is what Shelby computed from the file's commitments, and it mat
 
 ```
 npm run read:blob -- \
-  --blob-name licennode/example-dataset.txt \
+  --blob-name LICENSEIT/example-dataset.txt \
   --reader trainer-1 \
   --run run-final \
   --use training
@@ -187,7 +187,7 @@ npm run read:blob -- \
 Output from an actual run:
 
 ```
-Read licennode/example-dataset.txt (99 bytes)
+Read LICENSEIT/example-dataset.txt (99 bytes)
   served by account: 0x95a9e0179f40d0cea2642fe26786fe67fa16d21edbff267746262fdfb06c9be8
   merkle root: 0x329a2fec6d645d1a85e9a47a5f2e8e94fb3fc7bfec207f2aa868ddb7e4580947
   matches upload root: true
@@ -203,14 +203,14 @@ Read licennode/example-dataset.txt (99 bytes)
 Try declaring a use the license does not permit:
 
 ```
-npm run read:blob -- --blob-name licennode/example-dataset.txt --reader trainer-1 --run run-final --use inference
+npm run read:blob -- --blob-name LICENSEIT/example-dataset.txt --reader trainer-1 --run run-final --use inference
 ```
 
 ```
 License LIC-EXAMPLE-001 permits training, not inference.
 ```
 
-That refusal happens *before* the download. Checking first means an unauthorized read never fetches the bytes, so there is nothing to leak. Reads are also refused for any blob with no manifest entry, because an asset whose license is unknown is not an asset LicenNode will serve.
+That refusal happens *before* the download. Checking first means an unauthorized read never fetches the bytes, so there is nothing to leak. Reads are also refused for any blob with no manifest entry, because an asset whose license is unknown is not an asset LICENSEIT will serve.
 
 All reads go through one function, `readLicensedBlob` in `src/read/receiptMiddleware.ts`. It is the only code in the project that downloads from Shelby, so training code has no path around the license check.
 
@@ -258,7 +258,7 @@ Audit report for training run run-final
   verdict: COMPLIANT
   reads logged on chain: 1 (1 compliant, 1 distinct blobs)
 
-  OK   licennode/example-dataset.txt
+  OK   LICENSEIT/example-dataset.txt
        read at 2026-08-16T19:57:50.270Z by 0x95a9e017...
        license LIC-EXAMPLE-001 (Example Archive Ltd, training, expires 2027-01-01T00:00:00.000Z)
        txn 0xfaa3f66987cc206f7cd2b7f4fc90d5523de78c88afb5441fe91e3925aba338ef
@@ -281,7 +281,7 @@ A run with **no** logged reads is reported as not compliant, because an empty au
 
 Reads are matched to licenses by merkle root, not by blob name. The hash identifies the exact bytes served, whereas a name could later be pointed at different content.
 
-One implementation note: the Shelbynet indexer's GraphQL schema exposes no `events` root field, confirmed by introspecting `query_root`, so the usual indexer event query is unavailable on this network. `src/audit/chainQuery.ts` uses the fullnode's account transactions endpoint instead, which returns each transaction with its events inline. That scopes the audit to the logging account's own transactions, which is correct for LicenNode, where one operator account writes every receipt. A malformed event is skipped rather than thrown on, because one unparseable transaction must not make an entire audit unavailable.
+One implementation note: the Shelbynet indexer's GraphQL schema exposes no `events` root field, confirmed by introspecting `query_root`, so the usual indexer event query is unavailable on this network. `src/audit/chainQuery.ts` uses the fullnode's account transactions endpoint instead, which returns each transaction with its events inline. That scopes the audit to the logging account's own transactions, which is correct for LICENSEIT, where one operator account writes every receipt. A malformed event is skipped rather than thrown on, because one unparseable transaction must not make an entire audit unavailable.
 
 ---
 
