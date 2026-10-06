@@ -49,13 +49,29 @@ export function validateLicenseMetadata(
     const rightsHolder = requireNonEmptyString(candidate.rightsHolder, "rightsHolder");
     const source = requireNonEmptyString(candidate.source, "source");
 
-    if (!isPermittedUse(candidate.permittedUse)) {
+    // Handle permittedUse with backward compatibility for permittedOperations
+    let permittedUse = candidate.permittedUse as PermittedUse;
+    if (!isPermittedUse(permittedUse)) {
+        if (Array.isArray(candidate.permittedOperations) && candidate.permittedOperations.length > 0) {
+            const firstOp = String(candidate.permittedOperations[0]).toLowerCase();
+            if (firstOp === "both" || firstOp === "training") {
+                permittedUse = "training";
+            } else if (firstOp === "inference") {
+                permittedUse = "inference";
+            } else if (firstOp === "evaluation") {
+                permittedUse = "evaluation";
+            }
+        }
+    }
+    if (!isPermittedUse(permittedUse)) {
         throw new LicenseValidationError(
             `License field 'permittedUse' must be one of: ${PERMITTED_USES.join(", ")}.`,
         );
     }
 
-    const expiresAtRaw = requireNonEmptyString(candidate.expiresAt, "expiresAt");
+    // Support expiresAt or validUntil
+    const rawExpiry = candidate.expiresAt ?? candidate.validUntil;
+    const expiresAtRaw = requireNonEmptyString(rawExpiry, "expiresAt");
     const expiresAt = new Date(expiresAtRaw);
     if (Number.isNaN(expiresAt.getTime())) {
         throw new LicenseValidationError(
@@ -75,12 +91,70 @@ export function validateLicenseMetadata(
         );
     }
 
+    // Parse permittedOperations
+    let permittedOperations: ("TRAINING" | "INFERENCE" | "BOTH" | "EVALUATION")[] | undefined;
+    if (candidate.permittedOperations !== undefined) {
+        if (!Array.isArray(candidate.permittedOperations)) {
+            throw new LicenseValidationError("License field 'permittedOperations' must be an array.");
+        }
+        permittedOperations = candidate.permittedOperations.map((op) => {
+            const normalized = String(op).toUpperCase();
+            if (!["TRAINING", "INFERENCE", "BOTH", "EVALUATION"].includes(normalized)) {
+                throw new LicenseValidationError(`Unknown operation '${op}' in permittedOperations.`);
+            }
+            return normalized as "TRAINING" | "INFERENCE" | "BOTH" | "EVALUATION";
+        });
+    } else {
+        const defaultOp = permittedUse.toUpperCase() as "TRAINING" | "INFERENCE" | "EVALUATION";
+        permittedOperations = [defaultOp];
+    }
+
+    // Parse authorizedUsers & authorizedOrganizations
+    let authorizedUsers: string[] | undefined;
+    if (candidate.authorizedUsers !== undefined) {
+        if (!Array.isArray(candidate.authorizedUsers)) {
+            throw new LicenseValidationError("License field 'authorizedUsers' must be an array of strings.");
+        }
+        authorizedUsers = candidate.authorizedUsers.map(String).map((u) => u.trim()).filter(Boolean);
+    }
+
+    let authorizedOrganizations: string[] | undefined;
+    if (candidate.authorizedOrganizations !== undefined) {
+        if (!Array.isArray(candidate.authorizedOrganizations)) {
+            throw new LicenseValidationError("License field 'authorizedOrganizations' must be an array of strings.");
+        }
+        authorizedOrganizations = candidate.authorizedOrganizations.map(String).map((o) => o.trim()).filter(Boolean);
+    }
+
+    // Parse validFrom
+    let validFrom: string | undefined;
+    if (candidate.validFrom !== undefined && candidate.validFrom !== null && candidate.validFrom !== "") {
+        const vf = new Date(String(candidate.validFrom));
+        if (Number.isNaN(vf.getTime())) {
+            throw new LicenseValidationError(`License field 'validFrom' must be an ISO 8601 timestamp.`);
+        }
+        validFrom = vf.toISOString();
+    }
+
     return {
         licenseId,
         rightsHolder,
-        permittedUse: candidate.permittedUse,
+        permittedUse,
         expiresAt: expiresAt.toISOString(),
         source,
+        datasetName: candidate.datasetName ? String(candidate.datasetName).trim() : undefined,
+        datasetDescription: candidate.datasetDescription ? String(candidate.datasetDescription).trim() : undefined,
+        validFrom,
+        validUntil: expiresAt.toISOString(),
+        permittedOperations,
+        authorizedUsers,
+        authorizedOrganizations,
+        maxAccessStatus: candidate.maxAccessStatus ? String(candidate.maxAccessStatus) : undefined,
+        usageRestrictions: candidate.usageRestrictions ? String(candidate.usageRestrictions) : undefined,
+        violationPolicy: typeof candidate.violationPolicy === "object" && candidate.violationPolicy !== null
+            ? (candidate.violationPolicy as any)
+            : undefined,
+        status: (candidate.status as any) ?? "ACTIVE",
     };
 }
 

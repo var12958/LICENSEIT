@@ -1,8 +1,8 @@
 {
-    "name": "licennode",
+    "name": "LICENSEIT",
     "version": "0.1.0",
     "private": true,
-    "description": "LicenNode: licensed training data on Shelby with per-asset consent receipts",
+    "description": "LICENSEIT: licensed training data on Shelby with per-asset consent receipts",
     "type": "module",
     "engines": {
         "node": ">=22"
@@ -13,11 +13,12 @@
         "upload:file": "tsx src/upload/cli.ts file",
         "upload:dataset": "tsx src/upload/cli.ts dataset",
         "read:blob": "tsx src/read/cli.ts",
+        "access:request": "tsx src/access/cli.ts",
         "audit:run": "tsx src/audit/cli.ts"
     },
     "dependencies": {
-        "@aptos-labs/ts-sdk": "^6.0.0",
-        "@shelby-protocol/sdk": "^0.7.1"
+        "@aptos-labs/ts-sdk": "^6.3.1",
+        "@shelby-protocol/sdk": "^0.9.2"
     },
     "devDependencies": {
         "@types/node": "^22.10.2",

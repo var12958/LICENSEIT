@@ -20,7 +20,7 @@ shelby init --setup-default
 
 `shelby init` creates the account and writes `~/.shelby/config.yaml` with
 shelbynet as the default context. Copy the printed address and private key into
-`.env`, using `.env.example` as the template. That key is the one LicenNode signs
+`.env`, using `.env.example` as the template. That key is the one LICENSEIT signs
 with, so it stays in `.env` and nowhere else.
 
 ### Faucet funds

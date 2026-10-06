@@ -37,7 +37,7 @@ function license(overrides: Partial<LicenseMetadata> = {}): LicenseMetadata {
 
 function manifestEntry(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
     return {
-        blobName: "licennode/example-dataset.txt",
+        blobName: "LICENSEIT/example-dataset.txt",
         merkleRoot: BLOB_ROOT,
         license: license(),
         uploadedAt: "2026-08-16T15:24:00.589Z",
@@ -48,7 +48,7 @@ function manifestEntry(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
 }
 
 function writeTestManifest(entries: ManifestEntry[]): string {
-    const manifestPath = join(mkdtempSync(join(tmpdir(), "licennode-audit-")), "manifest.json");
+    const manifestPath = join(mkdtempSync(join(tmpdir(), "LICENSEIT-audit-")), "manifest.json");
     writeManifest(entries, manifestPath);
     return manifestPath;
 }
@@ -215,7 +215,7 @@ test("generateAuditReport reports a licensed run as compliant", async () => {
     assert.equal(report.distinctBlobs, 1);
     assert.deepEqual(report.problems, []);
     assert.equal(report.reads[0].verdict, "compliant");
-    assert.equal(report.reads[0].blobName, "licennode/example-dataset.txt");
+    assert.equal(report.reads[0].blobName, "LICENSEIT/example-dataset.txt");
     assert.equal(report.reads[0].license?.rightsHolder, "Example Archive Ltd");
 });
 
@@ -318,7 +318,7 @@ test("formatAuditReport prints the verdict, each read, and the findings", async 
     const text = formatAuditReport(report);
     assert.match(text, /Audit report for training run run-sprint4/);
     assert.match(text, /verdict: COMPLIANT/);
-    assert.match(text, /OK {3}licennode\/example-dataset\.txt/);
+    assert.match(text, /OK {3}LICENSEIT\/example-dataset\.txt/);
     assert.match(text, /txn 0xtxn1/);
     assert.doesNotMatch(text, /Findings:/);
 });
@@ -334,7 +334,7 @@ test("markdown report carries a verification entry for every read", async () => 
     const markdown = formatAuditReportAsMarkdown(report);
     assert.match(markdown, /^# Audit report for training run run-sprint4$/m);
     assert.match(markdown, /Verdict: compliant\./);
-    assert.match(markdown, /\| verified \| licennode\/example-dataset\.txt \| LIC-EXAMPLE-001 \|/);
+    assert.match(markdown, /\| verified \| LICENSEIT\/example-dataset\.txt \| LIC-EXAMPLE-001 \|/);
     // The verification section is the point of the Markdown format: an auditor must
     // be able to resolve every hash without trusting the report.
     assert.match(markdown, /## Verification/);

@@ -13,7 +13,7 @@ import type { ManifestEntry } from "../licenses/schema.js";
  * The path is resolved from this file's location, not from the working directory.
  * The web API runs with its own working directory, and a manifest that moved with
  * the caller would mean a blob uploaded by the CLI looked unlicensed to the API,
- * which the read path would correctly but wrongly refuse to serve. One LicenNode install has
+ * which the read path would correctly but wrongly refuse to serve. One LICENSEIT install has
  * one manifest.
  */
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");

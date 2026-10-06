@@ -1,5 +1,5 @@
 import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
-import { loadLicenNodeEnv } from "../config/env.js";
+import { loadLICENSEITEnv } from "../config/env.js";
 
 /**
  * Reads ReadLogged events back off Shelbynet.
@@ -13,7 +13,7 @@ import { loadLicenNodeEnv } from "../config/env.js";
  * being deployed with event tables.
  *
  * The consequence is that this queries the logging account's own transactions. That
- * is the correct scope for LicenNode, where one operator account writes the
+ * is the correct scope for LICENSEIT, where one operator account writes the
  * receipts. A multi-writer deployment would need an indexer with event support.
  */
 const READ_LOGGED_EVENT_SUFFIX = "::receipt_log::ReadLogged";
@@ -41,7 +41,7 @@ export interface ReceiptTransactionSource {
 const PAGE_SIZE = 100;
 
 export function createAptosTransactionSource(): ReceiptTransactionSource {
-    const env = loadLicenNodeEnv();
+    const env = loadLICENSEITEnv();
     const aptos = new Aptos(
         new AptosConfig({
             network: Network.CUSTOM,
@@ -125,7 +125,7 @@ export async function fetchReadReceipts(
     params: FetchReadReceiptsParams = {},
 ): Promise<OnChainReadReceipt[]> {
     const source = params.source ?? createAptosTransactionSource();
-    const moduleAddress = params.moduleAddress ?? loadLicenNodeEnv().receiptLogModuleAddress;
+    const moduleAddress = params.moduleAddress ?? loadLICENSEITEnv().receiptLogModuleAddress;
     const maxTransactions = params.maxTransactions ?? 1000;
     const expectedTypeSuffix = READ_LOGGED_EVENT_SUFFIX;
 
@@ -165,7 +165,7 @@ export async function fetchReadReceipts(
                     continue;
                 }
                 // Matching the full type, address included, keeps events emitted by a
-                // different deployment of the same module out of LicenNode's audit.
+                // different deployment of the same module out of LICENSEIT's audit.
                 if (eventRecord.type !== `${moduleAddress}${expectedTypeSuffix}`) {
                     continue;
                 }

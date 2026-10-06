@@ -36,7 +36,7 @@ function license(overrides: Partial<LicenseMetadata> = {}): LicenseMetadata {
 
 function manifestEntry(overrides: Partial<ManifestEntry> = {}): ManifestEntry {
     return {
-        blobName: "licennode/sample.txt",
+        blobName: "LICENSEIT/sample.txt",
         merkleRoot: CORRECT_ROOT,
         license: license(),
         uploadedAt: "2025-12-01T00:00:00.000Z",
@@ -77,7 +77,7 @@ function createStubReceiptLogWriter(
 }
 
 function writeTestManifest(entries: ManifestEntry[]): string {
-    const manifestPath = join(mkdtempSync(join(tmpdir(), "licennode-read-")), "manifest.json");
+    const manifestPath = join(mkdtempSync(join(tmpdir(), "LICENSEIT-read-")), "manifest.json");
     writeManifest(entries, manifestPath);
     return manifestPath;
 }
@@ -88,7 +88,7 @@ test("readLicensedBlob returns content, a receipt, and a logged transaction hash
     const receiptLogWriter = createStubReceiptLogWriter("0xlogged");
 
     const result = await readLicensedBlob({
-        blobName: "licennode/sample.txt",
+        blobName: "LICENSEIT/sample.txt",
         readerId: "trainer-1",
         trainingRunId: "run-42",
         declaredUse: "training",
@@ -98,7 +98,7 @@ test("readLicensedBlob returns content, a receipt, and a logged transaction hash
         now: NOW,
     });
 
-    assert.deepEqual(downloader.calls, ["licennode/sample.txt"]);
+    assert.deepEqual(downloader.calls, ["LICENSEIT/sample.txt"]);
     assert.equal(Buffer.from(result.content).toString(), SERVED_BYTES.toString());
     assert.equal(result.receipt.merkleRoot, CORRECT_ROOT);
     assert.equal(result.receipt.merkleRootMatchesManifest, true);
@@ -116,7 +116,7 @@ test("readLicensedBlob refuses content whose served bytes do not match the uploa
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "training",
@@ -137,7 +137,7 @@ test("readLicensedBlob rejects an unknown blob without downloading", async () =>
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/missing.txt",
+            blobName: "LICENSEIT/missing.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "training",
@@ -157,7 +157,7 @@ test("readLicensedBlob rejects a use the license does not permit", async () => {
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "inference",
@@ -180,7 +180,7 @@ test("readLicensedBlob rejects an expired license before downloading", async () 
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "training",
@@ -202,7 +202,7 @@ test("readLicensedBlob rejects an unreadable license expiry", async () => {
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "training",
@@ -221,7 +221,7 @@ test("readLicensedBlob requires a reader id", async () => {
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "   ",
             trainingRunId: "run-42",
             declaredUse: "training",
@@ -240,7 +240,7 @@ test("readLicensedBlob requires a training run id", async () => {
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "",
             declaredUse: "training",
@@ -263,7 +263,7 @@ test("readLicensedBlob wraps a download failure without leaking the cause object
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "training",
@@ -274,7 +274,7 @@ test("readLicensedBlob wraps a download failure without leaking the cause object
         }),
         (error: unknown) =>
             error instanceof Error &&
-            error.message.startsWith("Shelby read failed for blob 'licennode/sample.txt':") &&
+            error.message.startsWith("Shelby read failed for blob 'LICENSEIT/sample.txt':") &&
             error.cause === undefined,
     );
 });
@@ -286,7 +286,7 @@ test("readLicensedBlob does not log a refused read on chain", async () => {
 
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "evaluation",
@@ -313,7 +313,7 @@ test("readLicensedBlob surfaces a chain logging failure instead of returning con
     // served read missing from the audit log would be an invisible compliance gap.
     await assert.rejects(
         readLicensedBlob({
-            blobName: "licennode/sample.txt",
+            blobName: "LICENSEIT/sample.txt",
             readerId: "trainer-1",
             trainingRunId: "run-42",
             declaredUse: "training",

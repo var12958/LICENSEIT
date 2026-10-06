@@ -1,4 +1,4 @@
-/// Append-only log of licensed reads from LicenNode.
+/// Append-only log of licensed reads from LICENSEIT.
 ///
 /// Each read emits one event. Nothing is stored mutably, because an audit log
 /// that can be edited proves nothing. Events are permanent in the transaction
@@ -29,6 +29,16 @@ module receipt_log::receipt_log {
         timestamp_us: u64,
     }
 
+    #[event]
+    struct AccessLogged has drop, store {
+        blob_hash: vector<u8>,
+        license_id: String,
+        reader: address,
+        training_run_id: String,
+        operation: String,
+        timestamp_us: u64,
+    }
+
     /// Records one read. The reader address is derived from the signer rather than
     /// taken as an argument, so a caller cannot log a read under someone else's
     /// identity. The timestamp comes from the chain for the same reason: a caller
@@ -52,6 +62,29 @@ module receipt_log::receipt_log {
             timestamp_us: timestamp::now_microseconds(),
         });
     }
+
+    /// Records one controlled access with explicit operation authorization.
+    public entry fun log_access(
+        account: &signer,
+        blob_hash: vector<u8>,
+        license_id: String,
+        training_run_id: String,
+        operation: String,
+    ) {
+        assert!(!blob_hash.is_empty(), E_EMPTY_BLOB_HASH);
+        assert!(!license_id.is_empty(), E_EMPTY_LICENSE_ID);
+        assert!(!training_run_id.is_empty(), E_EMPTY_TRAINING_RUN_ID);
+
+        event::emit(AccessLogged {
+            blob_hash,
+            license_id,
+            reader: signer::address_of(account),
+            training_run_id,
+            operation,
+            timestamp_us: timestamp::now_microseconds(),
+        });
+    }
+
 
     #[test_only]
     use std::string;

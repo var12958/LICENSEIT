@@ -1,0 +1,282 @@
+{
+  "accessRecords": [
+    {
+      "id": "73e3d441-232f-4396-9218-8c47d5ba3736",
+      "timestamp": "2026-10-05T06:16:14.289Z",
+      "dataset": "demo-training.txt",
+      "blobHash": "0x0a366f238be01b27595e2fa1248f58c99d9dc00c84a7c37c4623b35f548a4015",
+      "licenseId": "DEMO-LICENSE-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0xc7f33e4e27a1c739227b9a0acabef41f922fc4655d16cb477421493d770e8699",
+      "contentLength": 75
+    },
+    {
+      "id": "8986ccb9-4e26-447c-b2d0-b93e5bed38d7",
+      "timestamp": "2026-10-05T06:37:00.036Z",
+      "dataset": "demo-training.txt",
+      "blobHash": "0x0a366f238be01b27595e2fa1248f58c99d9dc00c84a7c37c4623b35f548a4015",
+      "licenseId": "DEMO-LICENSE-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0xdea8787ca13b643c1da3d771cb51ab53af1a33574fe415f5c9a61d10061e13ac",
+      "contentLength": 75
+    },
+    {
+      "id": "b0b7077b-4816-4f6c-957a-0ff82b46d654",
+      "timestamp": "2026-10-05T07:46:29.225Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0xb43cad14c3e33603162027d40052f32e24b8d3340f9c22c81d3df0af837cadd0",
+      "contentLength": 1002857
+    },
+    {
+      "id": "d8954c3f-6524-4f32-8f3b-4a82c6c0ebaa",
+      "timestamp": "2026-10-05T07:54:48.034Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0x7a8010d9674bcbee0b99cf620d66b7ea539bf3cf43f3ed4d266fb33740352355",
+      "contentLength": 1002857
+    },
+    {
+      "id": "0d8799d6-8016-4c94-acd0-854a9045bd21",
+      "timestamp": "2026-10-05T08:00:26.025Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "INFERENCE",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "BLOCKED",
+      "verdict": "OPERATION_NOT_PERMITTED",
+      "reason": "This dataset is licensed for TRAINING only. INFERENCE is not permitted.",
+      "actionTaken": "USER_WARNED"
+    },
+    {
+      "id": "20441375-7ad1-4b22-9d9f-70a27729a121",
+      "timestamp": "2026-10-05T08:19:33.979Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0xa549ef140792b7d99f24155a668fe7a650f280726955e85393faf1c7d46effff",
+      "contentLength": 1002857
+    },
+    {
+      "id": "bdbbc3cb-031b-40dd-a646-d0a88f07dc40",
+      "timestamp": "2026-10-05T08:25:04.477Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "INFERENCE",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "BLOCKED",
+      "verdict": "OPERATION_NOT_PERMITTED",
+      "reason": "This dataset is licensed for TRAINING only. INFERENCE is not permitted.",
+      "actionTaken": "USER_RESTRICTED"
+    },
+    {
+      "id": "9fe16150-bf68-4cb7-b317-e9c7cb96495d",
+      "timestamp": "2026-10-05T08:32:20.322Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "BLOCKED",
+      "verdict": "ACCOUNT_RESTRICTED",
+      "reason": "Access rejected: Account 'Varun.v1' is currently RESTRICTED.",
+      "actionTaken": "USER_LOCKED"
+    },
+    {
+      "id": "3f60e008-b573-46d5-9837-abbdc5fd916b",
+      "timestamp": "2026-10-05T08:32:29.464Z",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v5",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "BLOCKED",
+      "verdict": "USER_NOT_AUTHORIZED",
+      "reason": "User 'Varun.v5' is not authorized to access dataset 'customer-data-1mb.csv'.",
+      "actionTaken": "USER_WARNED"
+    },
+    {
+      "id": "08b39687-9a5a-40f4-adc2-a3594d32be38",
+      "timestamp": "2026-10-05T08:32:55.262Z",
+      "dataset": "customer-data-2mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-002",
+      "readerId": "Varun.v5",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0x804dfd7b68c72a86ab2d5eb59e2893bf44dbf31149aad8f281822c8086225e0c",
+      "contentLength": 1002857
+    },
+    {
+      "id": "57351615-66e1-404b-86e7-6239945cb522",
+      "timestamp": "2026-10-05T09:24:44.873Z",
+      "dataset": "customer-data-6mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-008",
+      "readerId": "Varun.v1",
+      "trainingRunId": "sentiment.v5",
+      "operation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "status": "ALLOWED",
+      "verdict": "ACCESS_GRANTED",
+      "merkleVerified": true,
+      "receiptLogTransactionHash": "0xc2d3d16d7ea9cb8041c8ee7c0c2bcbecfbb25c397c499d43ca3e4b902190b526",
+      "contentLength": 1002857
+    }
+  ],
+  "violations": [
+    {
+      "id": "524f8e65-81fe-486d-a9ec-6fcfa1c7b153",
+      "eventType": "OPERATION_NOT_PERMITTED",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "requestedOperation": "INFERENCE",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "timestamp": "2026-10-05T08:00:26.025Z",
+      "action": "USER_WARNED",
+      "reason": "This dataset is licensed for TRAINING only. INFERENCE is not permitted.",
+      "accountStatusAfter": "ACTIVE"
+    },
+    {
+      "id": "6412208e-61d9-4d3d-a859-b92108d670fa",
+      "eventType": "OPERATION_NOT_PERMITTED",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "requestedOperation": "INFERENCE",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "timestamp": "2026-10-05T08:25:04.477Z",
+      "action": "USER_RESTRICTED",
+      "reason": "This dataset is licensed for TRAINING only. INFERENCE is not permitted.",
+      "accountStatusAfter": "RESTRICTED"
+    },
+    {
+      "id": "516320ea-0d05-4c13-bba5-73e991933286",
+      "eventType": "ACCOUNT_RESTRICTED",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v1",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "requestedOperation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "timestamp": "2026-10-05T08:32:20.322Z",
+      "action": "USER_LOCKED",
+      "reason": "Access rejected: Account 'Varun.v1' is currently RESTRICTED.",
+      "accountStatusAfter": "LOCKED"
+    },
+    {
+      "id": "940e48ea-3cf0-4928-9c97-edd4164ab0f7",
+      "eventType": "USER_NOT_AUTHORIZED",
+      "dataset": "customer-data-1mb.csv",
+      "blobHash": "0x8b46081457c0f20aa64b4feb3289e7cec4d7620218400b714ae24487f36b721c",
+      "licenseId": "LIC-2026-CUSTOMER-001",
+      "readerId": "Varun.v5",
+      "organizationId": "Example AI Labs",
+      "trainingRunId": "sentiment.v1",
+      "requestedOperation": "TRAINING",
+      "allowedOperations": [
+        "TRAINING"
+      ],
+      "timestamp": "2026-10-05T08:32:29.464Z",
+      "action": "USER_WARNED",
+      "reason": "User 'Varun.v5' is not authorized to access dataset 'customer-data-1mb.csv'.",
+      "accountStatusAfter": "ACTIVE"
+    }
+  ]
+}

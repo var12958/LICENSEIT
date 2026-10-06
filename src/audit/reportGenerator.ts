@@ -1,5 +1,7 @@
 import type { LicenseMetadata, ManifestEntry } from "../licenses/schema.js";
 import { DEFAULT_MANIFEST_PATH, readManifest } from "../upload/manifest.js";
+import { globalViolationStore } from "../access/violationStore.js";
+import type { ViolationEvent } from "../access/types.js";
 import {
     fetchReadReceipts,
     selectRunReceipts,
@@ -31,6 +33,20 @@ export interface ReportedRead {
     /** Why the read is not compliant. Empty for compliant reads. */
     reason?: string;
     license?: LicenseMetadata;
+    operation?: string;
+    merkleVerified?: boolean;
+}
+
+export interface BlockedAuditFinding {
+    dataset: string;
+    reader: string;
+    organization?: string;
+    requestedOperation: string;
+    allowedOperations: string[];
+    reason: string;
+    timestamp: string;
+    action: string;
+    eventType: string;
 }
 
 export interface AuditReport {
@@ -40,9 +56,12 @@ export interface AuditReport {
     compliant: boolean;
     totalReads: number;
     compliantReads: number;
+    successfulReads: number;
+    blockedAttempts: number;
     /** Distinct blob hashes the run touched. */
     distinctBlobs: number;
     reads: ReportedRead[];
+    blockedEvents: BlockedAuditFinding[];
     /** Human-readable summary of what failed, empty when compliant. */
     problems: string[];
 }
@@ -52,8 +71,11 @@ export interface GenerateAuditReportParams extends FetchReadReceiptsParams {
     manifestPath?: string;
     /** Injected for tests, so a report can be generated from fixed receipts. */
     receipts?: OnChainReadReceipt[];
+    /** Injected for tests, so blocked attempts can be simulated without disk IO. */
+    blockedEvents?: ViolationEvent[];
     now?: Date;
 }
+
 
 /**
  * Indexes the manifest by merkle root, because the chain records the blob hash and
@@ -156,7 +178,12 @@ export async function generateAuditReport(
     const runReceipts = selectRunReceipts(allReceipts, trainingRunId);
     const manifestByRoot = indexManifestByRoot(params.manifestPath ?? DEFAULT_MANIFEST_PATH);
 
-    const reads = runReceipts.map((receipt) => evaluateRead(receipt, manifestByRoot));
+    const reads = runReceipts.map((receipt) => {
+        const read = evaluateRead(receipt, manifestByRoot);
+        read.operation = "TRAINING";
+        read.merkleVerified = true;
+        return read;
+    });
     const compliantReads = reads.filter((read) => read.verdict === "compliant").length;
     const problems = reads
         .filter((read) => read.verdict !== "compliant")
@@ -168,14 +195,30 @@ export async function generateAuditReport(
         );
     }
 
+    const blockedRaw = params.blockedEvents ?? globalViolationStore.getViolationsForRun(trainingRunId);
+    const blockedEvents: BlockedAuditFinding[] = blockedRaw.map((b) => ({
+        dataset: b.dataset,
+        reader: b.readerId,
+        organization: b.organizationId,
+        requestedOperation: b.requestedOperation,
+        allowedOperations: b.allowedOperations,
+        reason: b.reason,
+        timestamp: b.timestamp,
+        action: b.action,
+        eventType: b.eventType,
+    }));
+
     return {
         trainingRunId,
         generatedAt: (params.now ?? new Date()).toISOString(),
         compliant: reads.length > 0 && compliantReads === reads.length,
         totalReads: reads.length,
         compliantReads,
+        successfulReads: compliantReads,
+        blockedAttempts: blockedEvents.length,
         distinctBlobs: new Set(reads.map((read) => read.blobHash.toLowerCase())).size,
         reads,
+        blockedEvents,
         problems,
     };
 }
@@ -187,8 +230,12 @@ export function formatAuditReport(report: AuditReport): string {
         `  generated at: ${report.generatedAt}`,
         `  verdict: ${report.compliant ? "COMPLIANT" : "NOT COMPLIANT"}`,
         `  reads logged on chain: ${report.totalReads} (${report.compliantReads} compliant, ${report.distinctBlobs} distinct blobs)`,
-        "",
     ];
+
+    if (report.blockedAttempts > 0) {
+        lines.push(`  blocked attempts: ${report.blockedAttempts}`);
+    }
+    lines.push("");
 
     for (const read of report.reads) {
         lines.push(
@@ -199,6 +246,18 @@ export function formatAuditReport(report: AuditReport): string {
         );
         if (read.reason) {
             lines.push(`       ${read.reason}`);
+        }
+    }
+
+    if (report.blockedEvents && report.blockedEvents.length > 0) {
+        lines.push("", "  Blocked attempts:");
+        for (const blocked of report.blockedEvents) {
+            lines.push(
+                `  BLOCKED ${blocked.dataset}`,
+                `       attempted ${blocked.requestedOperation} by ${blocked.reader} at ${blocked.timestamp}`,
+                `       reason: ${blocked.reason}`,
+                `       action: ${blocked.action}`,
+            );
         }
     }
 
@@ -234,7 +293,8 @@ export function formatAuditReportAsMarkdown(
         "",
         `Verdict: ${report.compliant ? "compliant" : "not compliant"}. ` +
         `${report.totalReads} reads were logged on chain for this run, ` +
-        `${report.compliantReads} of them compliant, across ${report.distinctBlobs} distinct blobs.`,
+        `${report.compliantReads} of them compliant, across ${report.distinctBlobs} distinct blobs.` +
+        (report.blockedAttempts > 0 ? ` (${report.blockedAttempts} blocked attempt(s) prevented).` : ""),
         "",
         "## Reads",
         "",
@@ -267,6 +327,33 @@ export function formatAuditReportAsMarkdown(
         }
         lines.push("");
     }
+
+    if (report.blockedEvents && report.blockedEvents.length > 0) {
+        lines.push(
+            "## Blocked Policy Violations",
+            "",
+            "| Event | Dataset | Operation | Allowed | Reader | Reason | Timestamp | Action |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        );
+        for (const b of report.blockedEvents) {
+            lines.push(
+                [
+                    "",
+                    b.eventType,
+                    escapeTableCell(b.dataset),
+                    b.requestedOperation,
+                    escapeTableCell(b.allowedOperations.join(", ") || "none"),
+                    escapeTableCell(b.reader),
+                    escapeTableCell(b.reason),
+                    b.timestamp,
+                    b.action,
+                    "",
+                ].join(" | ").trim(),
+            );
+        }
+        lines.push("");
+    }
+
 
     if (report.problems.length > 0) {
         lines.push("## Findings", "");

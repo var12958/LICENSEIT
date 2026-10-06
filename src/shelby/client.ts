@@ -3,7 +3,7 @@ import {
     NetworkToDefaultLocationHint,
     ShelbyNodeClient,
 } from "@shelby-protocol/sdk/node";
-import { loadLicenNodeEnv, type LicenNodeEnv } from "../config/env.js";
+import { loadLICENSEITEnv, type LICENSEITEnv } from "../config/env.js";
 
 /**
  * Client construction follows the official Node SDK setup at
@@ -12,25 +12,25 @@ import { loadLicenNodeEnv, type LicenNodeEnv } from "../config/env.js";
  * URLs in .env are recorded for operators and for CLI parity, and are passed
  * through here only when they differ from the SDK defaults for the network.
  */
-export interface LicenNodeShelbyContext {
+export interface LICENSEITShelbyContext {
     client: ShelbyNodeClient;
     signer: Account;
-    env: LicenNodeEnv;
+    env: LICENSEITEnv;
 }
 
-let cachedContext: LicenNodeShelbyContext | undefined;
+let cachedContext: LICENSEITShelbyContext | undefined;
 
 /**
  * Returns one shared client and signer for the whole process. A single instance
  * matters because each ShelbyClient lazily builds an erasure coding provider,
  * which is expensive to create per call.
  */
-export function getShelbyContext(): LicenNodeShelbyContext {
+export function getShelbyContext(): LICENSEITShelbyContext {
     if (cachedContext) {
         return cachedContext;
     }
 
-    const env = loadLicenNodeEnv();
+    const env = loadLICENSEITEnv();
     if (env.aptosNetwork !== Network.SHELBYNET) {
         throw new Error(
             `APTOS_NETWORK must be '${Network.SHELBYNET}' for this project, got '${env.aptosNetwork}'.`,

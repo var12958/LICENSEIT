@@ -39,7 +39,7 @@ export function createShelbyUploader(): BlobUploader {
     const { client, signer } = getShelbyContext();
     return {
         async upload({ blobData, blobName, expirationMicros }) {
-            await client.upload({ blobData, signer, blobName, expirationMicros });
+            await client.upload({ blobData, signer, blobName });
         },
         async computeMerkleRoot(blobData) {
             const provider = await createDefaultErasureCodingProvider();

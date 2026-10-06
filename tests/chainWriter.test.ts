@@ -8,7 +8,7 @@ import {
 import type { ReadEvent } from "../src/read/receiptMiddleware.js";
 
 /**
- * logReadOnChain reads RECEIPT_LOG_MODULE_ADDRESS through loadLicenNodeEnv, so these
+ * logReadOnChain reads RECEIPT_LOG_MODULE_ADDRESS through loadLICENSEITEnv, so these
  * tests set the variables in the process environment rather than relying on a .env
  * file. Process variables take precedence, which keeps the tests independent of
  * whatever the local .env holds.
@@ -31,7 +31,7 @@ function readEvent(overrides: Partial<ReadEvent> = {}): ReadEvent {
         trainingRunId: "run-sprint4",
         timestamp: "2026-08-16T15:24:00.589Z",
         receiptPayload: {
-            blobName: "licennode/example-dataset.txt",
+            blobName: "LICENSEIT/example-dataset.txt",
             servedByAccount: "0xabc",
             merkleRoot: MERKLE_ROOT,
             contentSha256: "0xdeadbeef",

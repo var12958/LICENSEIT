@@ -8,9 +8,13 @@ import { PERMITTED_USES, type PermittedUse } from "../../src/licenses/schema.js"
 import { LicenseValidationError } from "../../src/licenses/validate.js";
 import { LicenseDeniedError, readLicensedBlob } from "../../src/read/receiptMiddleware.js";
 import { uploadLicensedFile } from "../../src/upload/uploadPipeline.js";
+import { evaluateAccessRequest, AccessDeniedError } from "../../src/access/policyEngine.js";
+import { globalAccountStore } from "../../src/access/accountStore.js";
+import { globalViolationStore } from "../../src/access/violationStore.js";
+import { readManifest } from "../../src/upload/manifest.js";
 
 /**
- * Thin HTTP layer over the LicenNode functions from Sprints 2 through 5.
+ * Thin HTTP layer over the LICENSEIT functions from Sprints 2 through 5.
  *
  * It holds no business logic. Uploads call uploadLicensedFile, reads call
  * readLicensedBlob, and audits call generateAuditReport, so the license rules and
@@ -82,7 +86,7 @@ function readPermittedUse(body: Record<string, unknown>, field: string): Permitt
 /**
  * Blob names become paths in Shelby's namespace, so they are restricted to a
  * conservative character set. Rejecting "." segments blocks a name that would
- * resolve outside the LicenNode prefix.
+ * resolve outside the LICENSEIT prefix.
  */
 function readBlobName(body: Record<string, unknown>, field: string): string {
     const value = readStringField(body, field);
@@ -138,7 +142,7 @@ function readExpirationDays(body: Record<string, unknown>): number {
 
 /**
  * Throttles the two routes that spend tokens. Without this a held-down button
- * could empty the ShelbyUSD balance and take LicenNode offline.
+ * could empty the ShelbyUSD balance and take LICENSEIT offline.
  */
 function enforcePaidRequestInterval(request: Request): void {
     const client = request.ip ?? "unknown";
@@ -154,7 +158,7 @@ function enforcePaidRequestInterval(request: Request): void {
 }
 
 /**
- * Maps a failure to a status and a message. LicenNode errors carry the real reason,
+ * Maps a failure to a status and a message. LICENSEIT errors carry the real reason,
  * for example which license rule refused a read, and those are worth showing.
  * Anything unrecognized becomes a generic 500 rather than leaking internals.
  */
@@ -176,12 +180,26 @@ function toErrorResponse(error: unknown): RequestFailure {
 }
 
 function sendFailure(response: Response, error: unknown): void {
+    if (error instanceof AccessDeniedError) {
+        console.warn(`Policy denial: ${error.eventType} - ${error.message}`);
+        response.status(403).json({
+            status: "DENIED",
+            error: error.message,
+            reason: error.message,
+            eventType: error.eventType,
+            violation: error.violation,
+            accountStatus: error.accountStatus,
+            violationCount: error.violationCount,
+        });
+        return;
+    }
     const failure = toErrorResponse(error);
     // Logged server side with the message only, so an operator can see what broke
     // without the log becoming a place credentials could land.
     console.error(`Request failed with ${failure.status}: ${failure.message}`);
     response.status(failure.status).json({ error: failure.message });
 }
+
 
 function explorerTransactionUrl(transactionHash: string): string {
     return EXPLORER_TRANSACTION_BASE.replace("{hash}", transactionHash);
@@ -197,17 +215,41 @@ app.post("/api/upload", async (request, response) => {
         const body = request.body as Record<string, unknown>;
         const blobName = readBlobName(body, "blobName");
         const fileName = readStringField(body, "fileName");
-        const license = {
+        const license: Record<string, unknown> = {
             licenseId: readStringField(body, "licenseId"),
             rightsHolder: readStringField(body, "rightsHolder"),
-            permittedUse: readPermittedUse(body, "permittedUse"),
-            expiresAt: readStringField(body, "expiresAt"),
+            permittedUse: body.permittedUse ? readPermittedUse(body, "permittedUse") : "training",
+            expiresAt: body.expiresAt
+                ? readStringField(body, "expiresAt")
+                : (body.validUntil ? readStringField(body, "validUntil") : ""),
             source: readStringField(body, "source"),
+            datasetName: body.datasetName ? readStringField(body, "datasetName", { required: false }) : undefined,
+            datasetDescription: body.datasetDescription ? readStringField(body, "datasetDescription", { required: false }) : undefined,
+            validFrom: body.validFrom ? readStringField(body, "validFrom", { required: false }) : undefined,
+            validUntil: body.validUntil ? readStringField(body, "validUntil", { required: false }) : undefined,
+            permittedOperations: Array.isArray(body.permittedOperations)
+                ? body.permittedOperations
+                : (typeof body.permittedOperations === "string" && body.permittedOperations.trim()
+                    ? body.permittedOperations.split(",").map((s) => s.trim())
+                    : undefined),
+            authorizedUsers: Array.isArray(body.authorizedUsers)
+                ? body.authorizedUsers
+                : (typeof body.authorizedUsers === "string" && body.authorizedUsers.trim()
+                    ? body.authorizedUsers.split(",").map((s) => s.trim())
+                    : undefined),
+            authorizedOrganizations: Array.isArray(body.authorizedOrganizations)
+                ? body.authorizedOrganizations
+                : (typeof body.authorizedOrganizations === "string" && body.authorizedOrganizations.trim()
+                    ? body.authorizedOrganizations.split(",").map((s) => s.trim())
+                    : undefined),
+            usageRestrictions: body.usageRestrictions ? readStringField(body, "usageRestrictions", { required: false }) : undefined,
+            violationPolicy: typeof body.violationPolicy === "object" ? body.violationPolicy : undefined,
+            status: "ACTIVE",
         };
         const bytes = decodeUploadBytes(body);
         const expirationDays = readExpirationDays(body);
 
-        temporaryDirectory = mkdtempSync(join(tmpdir(), "licennode-web-upload-"));
+        temporaryDirectory = mkdtempSync(join(tmpdir(), "LICENSEIT-web-upload-"));
         // The file name is hashed rather than reused, so a crafted name cannot
         // influence the path even though the pipeline also guards its root.
         const safeName = createHash("sha256").update(fileName).digest("hex").slice(0, 32);
@@ -230,6 +272,97 @@ app.post("/api/upload", async (request, response) => {
         }
     }
 });
+
+app.post("/api/access/request", async (request, response) => {
+    try {
+        const body = request.body as Record<string, unknown>;
+        const blobName = readBlobName(body, "blobName");
+        const readerId = readStringField(body, "readerId", { required: false }) || "anonymous-reader";
+        const trainingRunId = readStringField(body, "trainingRunId", { required: false }) || "default-run";
+        const organizationId = readStringField(body, "organizationId", { required: false }) || undefined;
+        const operation = readStringField(body, "operation", { required: false }) || "TRAINING";
+
+        const result = await evaluateAccessRequest({
+            blobName,
+            readerId,
+            organizationId,
+            trainingRunId,
+            operation,
+        });
+
+        response.json({
+            status: "GRANTED",
+            data: result.contentString ?? Buffer.from(result.content).toString("base64"),
+            isText: !!result.contentString,
+            contentBytes: result.content.byteLength,
+            receipt: result.receipt,
+            license: result.license,
+            readEvent: {
+                blobHash: result.readEvent.blobHash,
+                licenseId: result.readEvent.licenseId,
+                readerId: result.readEvent.readerId,
+                trainingRunId: result.readEvent.trainingRunId,
+                timestamp: result.readEvent.timestamp,
+            },
+            merkleVerified: result.merkleVerified,
+            receiptLogTransactionHash: result.receiptLogTransactionHash,
+            explorerUrl: result.explorerUrl,
+        });
+    } catch (error) {
+        sendFailure(response, error);
+    }
+});
+
+app.get("/api/dashboard", async (_request, response) => {
+    try {
+        const manifestEntries = readManifest();
+        const datasets = manifestEntries.map((entry) => {
+            return globalViolationStore.getDatasetSummary(entry.blobName, {
+                licenseId: entry.license.licenseId,
+                rightsHolder: entry.license.rightsHolder,
+                validUntil: entry.license.validUntil ?? entry.license.expiresAt,
+                permittedOperations: entry.license.permittedOperations ?? [entry.license.permittedUse.toUpperCase()],
+                status: entry.license.status ?? "ACTIVE",
+            });
+        });
+
+        const recentEvents = globalViolationStore.getAllAccessRecords().slice(-25).reverse();
+        const violations = globalViolationStore.getAllViolations().slice(-15).reverse();
+        const accounts = globalAccountStore.getAllAccounts();
+
+        response.json({
+            datasets,
+            recentEvents,
+            violations,
+            accounts,
+        });
+    } catch (error) {
+        sendFailure(response, error);
+    }
+});
+
+app.post("/api/accounts/reset", (_request, response) => {
+    try {
+        globalAccountStore.reset();
+        globalViolationStore.reset();
+        response.json({ success: true, message: "Accounts and violations reset successfully." });
+    } catch (error) {
+        sendFailure(response, error);
+    }
+});
+
+app.post("/api/accounts/status", (request, response) => {
+    try {
+        const body = request.body as Record<string, unknown>;
+        const readerId = readStringField(body, "readerId");
+        const status = readStringField(body, "status") as "ACTIVE" | "RESTRICTED" | "LOCKED";
+        const updated = globalAccountStore.setStatus(readerId, status);
+        response.json({ success: true, account: updated });
+    } catch (error) {
+        sendFailure(response, error);
+    }
+});
+
 
 app.post("/api/read", async (request, response) => {
     try {
@@ -284,7 +417,7 @@ app.get("/api/audit", async (request, response) => {
     }
 });
 
-const port = Number(process.env.LICENNODE_API_PORT ?? DEFAULT_PORT);
+const port = Number(process.env.LICENSEIT_API_PORT ?? DEFAULT_PORT);
 app.listen(port, () => {
-    console.log(`LicenNode API listening on http://localhost:${port}`);
+    console.log(`LICENSEIT API listening on http://localhost:${port}`);
 });

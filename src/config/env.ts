@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
  * documents each one with a zero-filled placeholder. The private key is read
  * here and nowhere else, and is never included in error messages or logs.
  */
-export interface LicenNodeEnv {
+export interface LICENSEITEnv {
     accountAddress: string;
     accountPrivateKey: string;
     aptosNetwork: string;
@@ -82,7 +82,7 @@ function readEnvFile(envFilePath: string): Record<string, string> {
  * Loads configuration and fails immediately with every missing variable listed,
  * so a misconfigured setup is fixed in one pass instead of one error at a time.
  */
-export function loadLicenNodeEnv(envFilePath = DEFAULT_ENV_FILE_PATH): LicenNodeEnv {
+export function loadLICENSEITEnv(envFilePath = DEFAULT_ENV_FILE_PATH): LICENSEITEnv {
     const fileValues = readEnvFile(envFilePath);
     const resolveValue = (key: string): string | undefined => {
         const value = process.env[key] ?? fileValues[key];

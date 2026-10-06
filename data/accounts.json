@@ -1,0 +1,20 @@
+[
+  {
+    "readerId": "Varun.v1",
+    "organizationId": "Example AI Labs",
+    "status": "ACTIVE",
+    "violationCount": 0,
+    "lastSeen": "2026-10-05T08:50:29.658Z",
+    "lastViolation": "ACCOUNT_RESTRICTED",
+    "lastViolationReason": "Access rejected: Account 'Varun.v1' is currently RESTRICTED."
+  },
+  {
+    "readerId": "Varun.v5",
+    "organizationId": "Example AI Labs",
+    "status": "ACTIVE",
+    "violationCount": 1,
+    "lastSeen": "2026-10-05T08:32:29.466Z",
+    "lastViolation": "USER_NOT_AUTHORIZED",
+    "lastViolationReason": "User 'Varun.v5' is not authorized to access dataset 'customer-data-1mb.csv'."
+  }
+]

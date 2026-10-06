@@ -1,12 +1,14 @@
 import type { LicenseMetadata, ManifestEntry, PermittedUse } from "../../../src/licenses/schema.js";
 import type { AuditReport } from "../../../src/audit/reportGenerator.js";
 import type { ReadEvent, ReadReceipt } from "../../../src/read/receiptMiddleware.js";
+import type {
+    AccessRecord,
+    AccountRecord,
+    AccountStatus,
+    ViolationEvent,
+} from "../../../src/access/types.js";
+import type { DatasetAccessSummary } from "../../../src/access/violationStore.js";
 
-/**
- * Browser side calls into the local API in web/server. Types are imported from
- * src/ rather than redeclared, so a change to a receipt or report shape is a
- * compile error here instead of a silently wrong table at runtime.
- */
 const API_BASE = "/api";
 
 export interface UploadRequest {
@@ -19,6 +21,14 @@ export interface UploadRequest {
     permittedUse: PermittedUse;
     expiresAt: string;
     source: string;
+    datasetName?: string;
+    datasetDescription?: string;
+    validFrom?: string;
+    validUntil?: string;
+    permittedOperations?: string[];
+    authorizedUsers?: string[];
+    authorizedOrganizations?: string[];
+    usageRestrictions?: string;
 }
 
 export interface UploadResponse {
@@ -41,22 +51,78 @@ export interface ReadResponse {
     explorerUrl: string;
 }
 
+export interface ControlledAccessRequest {
+    blobName: string;
+    readerId?: string;
+    trainingRunId?: string;
+    organizationId?: string;
+    operation: string;
+}
+
+export interface ControlledAccessResponse {
+    status: "GRANTED" | "DENIED";
+    data?: string;
+    isText?: boolean;
+    contentBytes?: number;
+    receipt?: ReadReceipt;
+    license?: LicenseMetadata;
+    readEvent?: Omit<ReadEvent, "receiptPayload">;
+    merkleVerified?: boolean;
+    receiptLogTransactionHash?: string;
+    explorerUrl?: string;
+    error?: string;
+    reason?: string;
+    eventType?: string;
+    violation?: ViolationEvent;
+    accountStatus?: AccountStatus;
+    violationCount?: number;
+}
+
+export type ControlledAccessSuccess = ControlledAccessResponse & {
+    status: "GRANTED";
+    receipt: ReadReceipt;
+    license: LicenseMetadata;
+    receiptLogTransactionHash: string;
+    explorerUrl: string;
+};
+
+
+export interface DashboardResponse {
+    datasets: DatasetAccessSummary[];
+    recentEvents: AccessRecord[];
+    violations: ViolationEvent[];
+    accounts: AccountRecord[];
+}
+
 export interface AuditResponse {
     report: AuditReport;
     explorerUrls: Record<string, string>;
 }
 
-/**
- * A failed call carries the server's message so the UI can show the actual
- * reason, for example a license that expired before the read was attempted.
- */
-export class LicenNodeApiError extends Error {
+export class LICENSEITApiError extends Error {
     readonly status: number;
+    readonly violation?: ViolationEvent;
+    readonly accountStatus?: AccountStatus;
+    readonly violationCount?: number;
+    readonly eventType?: string;
 
-    constructor(status: number, message: string) {
+    constructor(
+        status: number,
+        message: string,
+        context: {
+            violation?: ViolationEvent;
+            accountStatus?: AccountStatus;
+            violationCount?: number;
+            eventType?: string;
+        } = {},
+    ) {
         super(message);
-        this.name = "LicenNodeApiError";
+        this.name = "LICENSEITApiError";
         this.status = status;
+        this.violation = context.violation;
+        this.accountStatus = context.accountStatus;
+        this.violationCount = context.violationCount;
+        this.eventType = context.eventType;
     }
 }
 
@@ -65,14 +131,19 @@ async function parseResponse<T>(response: Response): Promise<T> {
     try {
         payload = await response.json();
     } catch {
-        throw new LicenNodeApiError(response.status, "The API returned a response that was not JSON.");
+        throw new LICENSEITApiError(response.status, "The API returned a response that was not JSON.");
     }
     if (!response.ok) {
+        const record = (typeof payload === "object" && payload !== null ? payload : {}) as Record<string, unknown>;
         const message =
-            typeof payload === "object" && payload !== null && "error" in payload
-                ? String((payload as { error: unknown }).error)
-                : `The request failed with status ${response.status}.`;
-        throw new LicenNodeApiError(response.status, message);
+            record.error ? String(record.error) : (record.reason ? String(record.reason) : `The request failed with status ${response.status}.`);
+
+        throw new LICENSEITApiError(response.status, message, {
+            violation: record.violation as ViolationEvent | undefined,
+            accountStatus: record.accountStatus as AccountStatus | undefined,
+            violationCount: typeof record.violationCount === "number" ? record.violationCount : undefined,
+            eventType: record.eventType ? String(record.eventType) : undefined,
+        });
     }
     return payload as T;
 }
@@ -94,15 +165,31 @@ export async function readLicensedBlobRequest(request: ReadRequest): Promise<Rea
     return postJson<ReadResponse>("/read", request);
 }
 
+export async function requestControlledAccess(request: ControlledAccessRequest): Promise<ControlledAccessResponse> {
+    return postJson<ControlledAccessResponse>("/access/request", request);
+}
+
+export async function fetchDashboard(): Promise<DashboardResponse> {
+    const response = await fetch(`${API_BASE}/dashboard`);
+    return parseResponse<DashboardResponse>(response);
+}
+
+export async function resetAccounts(): Promise<{ success: boolean; message: string }> {
+    return postJson<{ success: boolean; message: string }>("/accounts/reset", {});
+}
+
+export async function updateAccountStatus(
+    readerId: string,
+    status: AccountStatus,
+): Promise<{ success: boolean; account: AccountRecord }> {
+    return postJson<{ success: boolean; account: AccountRecord }>("/accounts/status", { readerId, status });
+}
+
 export async function fetchAuditReport(trainingRunId: string): Promise<AuditResponse> {
     const response = await fetch(`${API_BASE}/audit?run=${encodeURIComponent(trainingRunId)}`);
     return parseResponse<AuditResponse>(response);
 }
 
-/**
- * Reads a File into base64 in chunks. A plain spread of the byte array blows the
- * argument limit on files of any size, so the conversion walks fixed windows.
- */
 export async function fileToBase64(file: File): Promise<string> {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const CHUNK = 0x8000;

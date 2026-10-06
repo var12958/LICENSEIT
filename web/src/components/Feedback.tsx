@@ -1,11 +1,5 @@
 import { useEffect } from "react";
-import "./material.js";
-
-/**
- * Shared feedback pieces: an error banner, a busy indicator, and a snackbar.
- * They live in one file because all three exist only to report the state of a
- * request, and keeping them together keeps that vocabulary consistent.
- */
+import { CopyButton } from "./CopyButton.js";
 
 export interface ErrorBannerProps {
     title: string;
@@ -13,14 +7,20 @@ export interface ErrorBannerProps {
 }
 
 /**
- * Errors are announced through role="alert" so a screen reader hears a refused
- * read without the user hunting for what changed.
+ * Technical ErrorBanner: high-contrast security-console alert block with
+ * sharp rectangular borders and alert icon.
  */
 export function ErrorBanner({ title, message }: ErrorBannerProps) {
     return (
-        <div className="error-banner" role="alert">
-            <p className="m3-title-medium">{title}</p>
-            <p className="m3-body-medium">{message}</p>
+        <div className="tech-error-banner" role="alert">
+            <div className="tech-error-icon" aria-hidden="true">
+                !
+            </div>
+            <div className="tech-error-body">
+                <span className="tech-error-tag">ALERT // OPERATION REJECTED</span>
+                <p className="tech-error-title">{title}</p>
+                <p className="tech-error-message">{message}</p>
+            </div>
         </div>
     );
 }
@@ -30,14 +30,20 @@ export interface BusyIndicatorProps {
 }
 
 /**
- * Indeterminate progress, since Shelby uploads and chain submissions give no
- * completion percentage. aria-live polite reports the label without interrupting.
+ * Technical BusyIndicator: high-tech animated processing bar with glowing neon pulse.
  */
 export function BusyIndicator({ label }: BusyIndicatorProps) {
     return (
-        <div className="status-row" aria-live="polite">
-            <md-circular-progress indeterminate aria-hidden="true"></md-circular-progress>
-            <span className="m3-body-medium">{label}</span>
+        <div className="tech-busy-banner" aria-live="polite">
+            <div className="tech-busy-pulse" aria-hidden="true">
+                <span className="tech-busy-dot" />
+                <span className="tech-busy-ring" />
+            </div>
+            <div className="tech-busy-content">
+                <span className="tech-busy-tag">EXECUTING ON-CHAIN / STORAGE PROTOCOL</span>
+                <span className="tech-busy-label">{label}</span>
+            </div>
+            <div className="tech-busy-scanner-line" aria-hidden="true" />
         </div>
     );
 }
@@ -47,9 +53,11 @@ export interface SnackbarProps {
     onDismiss: () => void;
 }
 
-/** Auto-dismiss window from the M3 snackbar spec's short duration guidance. */
 const SNACKBAR_DURATION_MS = 6000;
 
+/**
+ * Technical Snackbar: Sharp HUD console toast with neon green status indicator and dismiss button.
+ */
 export function Snackbar({ message, onDismiss }: SnackbarProps) {
     useEffect(() => {
         const timer = window.setTimeout(onDismiss, SNACKBAR_DURATION_MS);
@@ -57,9 +65,20 @@ export function Snackbar({ message, onDismiss }: SnackbarProps) {
     }, [message, onDismiss]);
 
     return (
-        <div className="snackbar" role="status">
-            <span className="m3-body-medium">{message}</span>
-            <md-text-button onClick={onDismiss}>Dismiss</md-text-button>
+        <div className="tech-snackbar" role="status">
+            <div className="tech-snackbar-indicator" aria-hidden="true" />
+            <div className="tech-snackbar-content">
+                <span className="tech-snackbar-tag">SYSTEM EVENT LOGGED</span>
+                <span className="tech-snackbar-text">{message}</span>
+            </div>
+            <button
+                type="button"
+                className="tech-snackbar-dismiss"
+                onClick={onDismiss}
+                aria-label="Dismiss notification"
+            >
+                Dismiss
+            </button>
         </div>
     );
 }
@@ -72,18 +91,36 @@ export interface DetailRow {
 }
 
 /**
- * Description list for receipt and license fields. A dl carries the key to value
- * relationship that a pile of divs would lose.
+ * Technical DetailList: High-contrast cryptographic key-value table.
+ * Long hashes have automatic copy-to-clipboard buttons and clean monospace formatting.
  */
 export function DetailList({ rows }: { rows: readonly DetailRow[] }) {
     return (
-        <dl className="detail-grid">
-            {rows.map((row) => (
-                <div key={row.label} style={{ display: "contents" }}>
-                    <dt>{row.label}</dt>
-                    <dd className={row.mono ? "hash-value" : undefined}>{row.value}</dd>
-                </div>
-            ))}
+        <dl className="tech-detail-grid">
+            {rows.map((row) => {
+                const isHashOrTx =
+                    row.mono &&
+                    row.value.length > 10 &&
+                    !row.value.includes(" ") &&
+                    (row.label.toLowerCase().includes("root") ||
+                        row.label.toLowerCase().includes("hash") ||
+                        row.label.toLowerCase().includes("sha") ||
+                        row.label.toLowerCase().includes("account") ||
+                        row.label.toLowerCase().includes("transaction") ||
+                        row.label.toLowerCase().includes("license id"));
+
+                return (
+                    <div key={row.label} className="tech-detail-row">
+                        <dt className="tech-detail-label">
+                            <span className="tech-detail-prefix">//</span> {row.label}
+                        </dt>
+                        <dd className={`tech-detail-value ${row.mono ? "tech-mono" : ""}`}>
+                            <span className="tech-value-text">{row.value}</span>
+                            {isHashOrTx && <CopyButton text={row.value} />}
+                        </dd>
+                    </div>
+                );
+            })}
         </dl>
     );
 }

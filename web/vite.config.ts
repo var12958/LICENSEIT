@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
  * the browser talks to one origin, which keeps the private key and every paid
  * Shelby call on the server side where they belong.
  */
-const API_PORT = Number(process.env.LICENNODE_API_PORT ?? 8787);
+const API_PORT = Number(process.env.LICENSEIT_API_PORT ?? 8787);
 
 export default defineConfig({
     plugins: [react()],
